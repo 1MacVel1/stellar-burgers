@@ -16,6 +16,7 @@ export const BurgerConstructorUI = ({
   orderRequest,
   price,
   orderModalData,
+  orderError,
   onOrderClick,
   closeOrderModal,
 }: BurgerConstructorUIProps): React.JSX.Element => (
@@ -37,6 +38,7 @@ export const BurgerConstructorUI = ({
         Выберите булки
       </div>
     )}
+
     <ul className={styles.elements}>
       {constructorItems.ingredients.length > 0 ? (
         constructorItems.ingredients.map(
@@ -55,6 +57,7 @@ export const BurgerConstructorUI = ({
         </li>
       )}
     </ul>
+
     {constructorItems.bun ? (
       <div className={`${styles.element} mt-4 mr-4`}>
         <ConstructorElement
@@ -72,24 +75,39 @@ export const BurgerConstructorUI = ({
         Выберите булки
       </div>
     )}
+
     <div className={`${styles.total} mt-10 mr-4`}>
       <div className={`${styles.cost} mr-10`}>
         <p className={`text ${styles.text} mr-2`}>{price}</p>
+
         <CurrencyIcon type="primary" />
       </div>
-      <Button htmlType="button" type="primary" size="large" onClick={onOrderClick}>
+
+      <Button
+        htmlType="button"
+        type="primary"
+        size="large"
+        onClick={onOrderClick}
+        disabled={orderRequest}
+      >
         Оформить заказ
       </Button>
     </div>
 
+    {orderError && (
+      <p role="alert" className="text text_type_main-default mt-4">
+        Не удалось оформить заказ: {orderError}
+      </p>
+    )}
+
     {orderRequest && (
-      <Modal onClose={closeOrderModal} title={'Оформляем заказ...'}>
+      <Modal onClose={closeOrderModal} title="Оформляем заказ...">
         <Preloader />
       </Modal>
     )}
 
     {orderModalData && (
-      <Modal onClose={closeOrderModal} title={orderRequest ? 'Оформляем заказ...' : ''}>
+      <Modal onClose={closeOrderModal} title="">
         <OrderDetailsUI orderNumber={orderModalData.number} />
       </Modal>
     )}
