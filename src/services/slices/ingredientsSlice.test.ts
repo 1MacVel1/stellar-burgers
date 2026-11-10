@@ -3,6 +3,7 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import { fetchIngredients, ingredientsReducer } from './ingredientsSlice';
 
+import type { TIngredientsState } from './ingredientsSlice';
 import type { TIngredient } from '@utils-types';
 
 jest.mock('@api', () => ({
@@ -32,7 +33,7 @@ describe('ingredientsSlice', () => {
 
   test('Начальное состояние задано правильно', () => {
     const state = ingredientsReducer(undefined, {
-      type: '@@INIT',
+      type: 'UNKNOWN',
     });
 
     expect(state).toEqual({
@@ -42,58 +43,63 @@ describe('ingredientsSlice', () => {
     });
   });
 
-  test('При запуске запроса устанавливается статус loading', async () => {
-    mockedGetIngredientsApi.mockResolvedValue([mockIngredient]);
+  test('pending включает загрузку и сбрасывает предыдущую ошибку', () => {
+    const failedState: TIngredientsState = {
+      items: [],
+      status: 'failed',
+      error: 'Предыдущая ошибка',
+    };
+    const action = fetchIngredients.pending('request-1', undefined);
 
-    const store = configureStore({
-      reducer: {
-        ingredients: ingredientsReducer,
-      },
+    expect(ingredientsReducer(failedState, action)).toEqual({
+      items: [],
+      status: 'loading',
+      error: null,
     });
-
-    const request = store.dispatch(fetchIngredients());
-
-    expect(store.getState().ingredients.status).toBe('loading');
-    expect(store.getState().ingredients.error).toBeNull();
-
-    await request;
   });
 
-  test('При успешном запросе ингредиенты сохраняются в Redux', async () => {
-    mockedGetIngredientsApi.mockResolvedValue([mockIngredient]);
+  test('fulfilled сохраняет ингредиенты и завершает загрузку', () => {
+    const loadingState = ingredientsReducer(
+      undefined,
+      fetchIngredients.pending('request-1', undefined)
+    );
+    const action = fetchIngredients.fulfilled([mockIngredient], 'request-1', undefined);
 
-    const store = configureStore({
-      reducer: {
-        ingredients: ingredientsReducer,
-      },
-    });
-
-    await store.dispatch(fetchIngredients());
-
-    expect(store.getState().ingredients).toEqual({
+    expect(ingredientsReducer(loadingState, action)).toEqual({
       items: [mockIngredient],
       status: 'succeeded',
       error: null,
     });
-
-    expect(mockedGetIngredientsApi).toHaveBeenCalledTimes(1);
   });
 
-  test('При ошибке запроса устанавливается статус failed', async () => {
-    mockedGetIngredientsApi.mockRejectedValue(new Error('Ошибка соединения с сервером'));
+  test('rejected сохраняет ошибку и завершает загрузку', () => {
+    const loadingState = ingredientsReducer(
+      undefined,
+      fetchIngredients.pending('request-1', undefined)
+    );
+    const action = fetchIngredients.rejected(
+      new Error('Ошибка соединения с сервером'),
+      'request-1',
+      undefined
+    );
 
-    const store = configureStore({
-      reducer: {
-        ingredients: ingredientsReducer,
-      },
-    });
-
-    await store.dispatch(fetchIngredients());
-
-    expect(store.getState().ingredients).toEqual({
+    expect(ingredientsReducer(loadingState, action)).toEqual({
       items: [],
       status: 'failed',
       error: 'Ошибка соединения с сервером',
+    });
+  });
+
+  test('rejected использует стандартное сообщение при ошибке без текста', () => {
+    const action = {
+      ...fetchIngredients.rejected(null, 'request-1', undefined),
+      error: { name: 'NetworkError' },
+    };
+
+    expect(ingredientsReducer(undefined, action)).toEqual({
+      items: [],
+      status: 'failed',
+      error: 'Не удалось загрузить ингредиенты',
     });
   });
 

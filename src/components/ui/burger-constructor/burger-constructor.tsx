@@ -20,7 +20,7 @@ export const BurgerConstructorUI = ({
   onOrderClick,
   closeOrderModal,
 }: BurgerConstructorUIProps): React.JSX.Element => (
-  <section className={styles.burger_constructor}>
+  <section className={styles.burger_constructor} aria-label="Конструктор бургера">
     {constructorItems.bun ? (
       <div className={`${styles.element} mb-4 mr-4`}>
         <ConstructorElement

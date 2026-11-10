@@ -47,7 +47,7 @@ const main: TIngredient = {
 
 describe('constructorSlice', () => {
   test('возвращает начальное состояние', () => {
-    const state = constructorReducer(undefined, { type: 'unknown' });
+    const state = constructorReducer(undefined, { type: 'UNKNOWN' });
 
     expect(state).toEqual({
       bun: null,
@@ -63,12 +63,13 @@ describe('constructorSlice', () => {
   });
 
   test('заменяет предыдущую булку новой', () => {
-    const firstState = constructorReducer(undefined, addIngredient(bun));
+    const stateWithFilling = constructorReducer(undefined, addIngredient(main));
+    const firstState = constructorReducer(stateWithFilling, addIngredient(bun));
 
     const secondState = constructorReducer(firstState, addIngredient(secondBun));
 
     expect(secondState.bun?._id).toBe(secondBun._id);
-    expect(secondState.ingredients).toHaveLength(0);
+    expect(secondState.ingredients).toEqual(stateWithFilling.ingredients);
   });
 
   test('добавляет начинку', () => {
@@ -117,6 +118,19 @@ describe('constructorSlice', () => {
 
     expect(state.ingredients[0]._id).toBe(main._id);
     expect(state.ingredients[1]._id).toBe(sauce._id);
+  });
+
+  test.each([
+    { fromIndex: -1, toIndex: 1 },
+    { fromIndex: 0, toIndex: -1 },
+    { fromIndex: 2, toIndex: 1 },
+    { fromIndex: 0, toIndex: 2 },
+    { fromIndex: 1, toIndex: 1 },
+  ])('сохраняет порядок при перемещении с $fromIndex на $toIndex', (indexes) => {
+    const stateWithSauce = constructorReducer(undefined, addIngredient(sauce));
+    const state = constructorReducer(stateWithSauce, addIngredient(main));
+
+    expect(constructorReducer(state, moveIngredient(indexes))).toBe(state);
   });
 
   test('очищает конструктор', () => {
